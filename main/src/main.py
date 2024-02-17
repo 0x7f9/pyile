@@ -1,6 +1,8 @@
-from modules.ui.gui import App
+from modules.ui.gui import interface
 
 if __name__ == "__main__":
-    app = App()
-    app.mainloop()
+    interface = interface()
+    interface.mainloop()
+    
+
     

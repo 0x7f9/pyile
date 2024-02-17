@@ -64,7 +64,13 @@ class user_config:
                 for line in file:
                     if line.startswith("-"):
                         path = line.strip().strip("-")
+                        if not os.path.exists(path):
+                            self.log(f"Path {path} does not exists, please remove from config file")
+                            continue 
+                       
+                        # load new paths in
                         if path not in self.PATHS:
+                            print(path)
                             self.PATHS.append(path)
 
         except:

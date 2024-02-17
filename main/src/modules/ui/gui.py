@@ -17,7 +17,7 @@ fg_color = "#ffffff"  # white text color
 customtkinter.set_appearance_mode("System") 
 customtkinter.set_default_color_theme("dark-blue")  
 
-class App(customtkinter.CTk):
+class interface(customtkinter.CTk):
     def __init__(self):
         # init customtkinter.CTk
         super().__init__()
@@ -316,6 +316,10 @@ class App(customtkinter.CTk):
 
 
     def start_monitoring(self):
+        if not self.PATHS:
+            log(self.console, "There are no directories to monitor")
+            return
+        
         self.sidebar_button_1.configure(text="Stop logging")
         for path in self.PATHS:
             # pass through log functuion so we can call it by self.log without having to import log function into each file
@@ -341,7 +345,7 @@ class App(customtkinter.CTk):
             thread.join(timeout=1)
         self.monitor_threads.clear()
         self.monitors.clear()
-        log(self.console, "File logging stopped")
+        log(self.console, "File logging stopped\n")
 
 
     def prompt(self):

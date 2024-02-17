@@ -145,7 +145,7 @@ class monitor:
             self.old_name = filename
 
         elif self.handle == FILE_RENAMED_TO:
-            self.log(f"User: {username} renamed: [{self.old_name}] to: [{filename}]")
+            self.log(f"! User: {username} renamed: [{self.old_name}] to: [{filename}]")
 
         else:
             self.log(f"? Unknown action: {path_filename}")
@@ -253,11 +253,12 @@ class monitor:
                 # wait for all files to be submited
                 concurrent.futures.wait(new_files)
 
-            # dont wait for all files
+            # dont wait for all files to be submited
             # concurrent.futures.wait(new_files)
         
         except:
             pass
+
 
     def notfication(self, path_filename):
         print("CLICKED")
@@ -276,7 +277,6 @@ class monitor:
             # block main logger from starting
             spider.join()
         
-
         # main logger
         self.log("Started file logging...")
         self.log(f"Started logging {self.path}\n")

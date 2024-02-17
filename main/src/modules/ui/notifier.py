@@ -1,13 +1,17 @@
-from win32api import *
-from win32gui import *
 import os
 import time
-import winsound
 import threading
+import winsound
+from win32api import *
+from win32gui import *
+from winsound import SND_FILENAME, SND_ASYNC
 from win32con import WS_OVERLAPPED, WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, LR_DEFAULTSIZE, IMAGE_ICON, WM_USER
 
 PARAM_DESTROY = 1028
 PARAM_CLICKED = 1029
+
+# removes the default notification sound
+NIIF_NOSOUND = 0x00000010
 
 class notifer:
     thread = False
@@ -36,11 +40,7 @@ class notifer:
         wc.lpszClassName = str("Pyile")
         # wc.lpfnWndProc = message_map # simple mapping
         wc.lpfnWndProc = self._decorator(self.wnd_proc, on_click) 
-        try:
-            classAtom = RegisterClass(wc)
-        except Exception as e:
-            print(e)
-            pass
+        classAtom = RegisterClass(wc)
         style = WS_OVERLAPPED | WS_SYSMENU
         hwnd = CreateWindow(classAtom, None, style,
                                  0, 0, CW_USEDEFAULT, 
@@ -57,10 +57,10 @@ class notifer:
         nid = (hwnd, 0, flags, WM_USER+20, hicon, "Pyile Notification")
         Shell_NotifyIcon(NIM_ADD, nid)
         Shell_NotifyIcon(NIM_MODIFY, (hwnd, 0, NIF_INFO, WM_USER+20,
-                                      hicon,"tooltip",title,200,msg)
+                                      hicon,"tooltip",title,200,msg,NIIF_NOSOUND)
         )
-        # notification sound
-        winsound.PlaySound("main\\src\\modules\\ui\\sounds\\chimes.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
+        # new notification sound
+        winsound.PlaySound("main\\src\\modules\\ui\\sounds\\notification_sound.wav", SND_FILENAME | SND_ASYNC)
         
         PumpMessages()
         time.sleep(duration)
