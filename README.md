@@ -8,12 +8,13 @@ python pip install -r requirements.txt
 ```
 **Features**
 
-- Monitor single or multiple file directories in real time (Added, Modified, and Deleted)
+- Monitor single or multiple directories in real time (Added, Modified, or Deleted files)
+- Exclude certain directories when monitoring full hard drive paths
 - Create local backups of file directories, detected changes will trigger further backups
 - Duplicate file detection using hashing
 - Option to scan selected directories for existing file duplicates
 - Windows desktop notification support 
-- Detailed logging support 
+- Detailed logging support
 - Configuration files making the next monitoring session easier
 
 **UI Images**  
