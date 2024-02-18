@@ -33,7 +33,7 @@ class notifer:
 
     
     def notify(self, title, msg, duration, on_click):
-        print("Notification triggered")
+        # print("Notification triggered")
 
         wc = WNDCLASS()
         hinst = wc.hInstance = GetModuleHandle(None)
@@ -85,7 +85,7 @@ class notifer:
             return
         else:
             notifer.thread = True 
-            print("Starting new notification thread")
+            # print("Starting new notification thread")
             notification_thread = threading.Thread(target=self.notify, args=(title, msg, duration, on_click))
             notification_thread.start()
             notification_thread.join()

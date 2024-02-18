@@ -11,12 +11,13 @@ PATHS = [
 EXCLUDED_PATHS = [
     # when monitoring the entire C:\ drive it will detect all changes made in the system
     # adding file paths here will reduce unnecessary output logs
+    # exluded paths can be a partial path or a full path
 
     # notfication triggers make a temp file in this location
-    "C:\\Users\\dev\\AppData\\Local\\Microsoft\\Windows\\Explorer\\NotifyIcon",
+    "\\AppData\\Local\\Microsoft\\Windows\\Explorer\\NotifyIcon",
 
     # when chrome is open it constantly writes user data here
-    "C:\\Users\\dev\\AppData\\Local\\Google\\Chrome\\User Data\\Default"
+    "\\AppData\\Local\\Google\\Chrome\\User Data\\Default"
 
     # add hard coded directories here all will be loaded in on start up
 ] 
@@ -103,8 +104,10 @@ class user_config:
             with open(cfg, "w") as file:
                 file.write("[Excluded Directories Config]\n\n")
                 file.write("# Manually add excluded directories as shown below\n")
-                file.write("# -C:\\Users\n")
-                file.write("# -C:\\Users\\dev\\AppData\n")
+                file.write("# Directories can be a partial path or a full path\n")
+                file.write("# -C:\\Windows\n")
+                file.write("# -\\AppData\n")
+                file.write("# -\\dev\\AppData\n")
                 file.write("# -C:/Users/dev/AppData\n\n")
                 
         except:
@@ -133,9 +136,6 @@ class user_config:
                 for line in file:
                     if line.startswith("-"):
                         path = line.strip().strip("-")
-                        if not os.path.exists(path):
-                            self.log(f"Path {path} does not exists, please remove from excluded config file")
-                            continue 
                        
                         # load new paths in
                         if path not in self.EXCLUDE:
