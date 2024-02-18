@@ -1,22 +1,40 @@
 import os
 
-STORED_PATHS = set()
+# STORED_PATHS = set()
 PATHS = [
-    # "C:\\Users\\dev\\AppData\\Local\\Temp"
+    # "C:\\Windows"
     # "C:\\Users\\dev\\Documents"
 
-    # add hard coded directories here
+    # add hard coded directories here all will be loaded in on start up
+] 
+
+EXCLUDED_PATHS = [
+    # when monitoring the entire C:\ drive it will detect all changes made in the system
+    # adding file paths here will reduce unnecessary output logs
+
+    # notfication triggers make a temp file in this location
+    "C:\\Users\\dev\\AppData\\Local\\Microsoft\\Windows\\Explorer\\NotifyIcon",
+
+    # when chrome is open it constantly writes user data here
+    "C:\\Users\\dev\\AppData\\Local\\Google\\Chrome\\User Data\\Default"
+
+    # add hard coded directories here all will be loaded in on start up
 ] 
 
 class user_config:
     def __init__(self, log):
         self.log = log
         self.PATHS = PATHS
+        self.EXCLUDE = EXCLUDED_PATHS
         self.config = {}
     
     
     def return_paths(self):
         return self.PATHS
+    
+    
+    def return_excluded_paths(self):
+        return self.EXCLUDE
 
 
     def config_location(self, cfg_name):
@@ -26,14 +44,14 @@ class user_config:
         return os.path.join(path, cfg_name)
 
 
-    def make_directories_config(self):
+    def make_save_directories_config(self):
         cfg = self.config_location('saved_directories.cfg')
-        self.log(f"Config file made - {cfg}")
+        self.log(f"Saved directories config file made  - {cfg}")
 
         try:
             with open(cfg, "w") as file:
                 file.write("[Saved Directories Config]\n\n")
-                file.write("# Manually add directories as shown below\n")
+                file.write("# Manually add saved directories as shown below\n")
                 file.write("# -C:\\Users\n")
                 file.write("# -C:\\Users\\dev\\AppData\n")
                 file.write("# -C:/Users/dev/AppData\n\n")
@@ -52,7 +70,7 @@ class user_config:
             with open(cfg, "a") as file:
                 file.write(f"-{path}\n")
         except:
-            self.log("Error saving directories")
+            self.log("Error saving saved directories file")
 
 
     def load_directories_config(self):
@@ -65,17 +83,67 @@ class user_config:
                     if line.startswith("-"):
                         path = line.strip().strip("-")
                         if not os.path.exists(path):
-                            self.log(f"Path {path} does not exists, please remove from config file")
+                            self.log(f"Path {path} does not exists, please remove from saved config file")
                             continue 
                        
                         # load new paths in
                         if path not in self.PATHS:
-                            print(path)
                             self.PATHS.append(path)
 
         except:
             self.log("No saved directories config found")
             self.make_directories_config()
+
+
+    def make_excluded_directories_config(self):
+        cfg = self.config_location('excluded_directories.cfg')
+        self.log(f"Exclude directories config file made - {cfg}")
+
+        try:
+            with open(cfg, "w") as file:
+                file.write("[Excluded Directories Config]\n\n")
+                file.write("# Manually add excluded directories as shown below\n")
+                file.write("# -C:\\Users\n")
+                file.write("# -C:\\Users\\dev\\AppData\n")
+                file.write("# -C:/Users/dev/AppData\n\n")
+                
+        except:
+            self.log("Error making excluded directories file")
+
+
+    def save_excluded_directories_config(self, path):
+        if path == None:
+            return
+        
+        cfg = self.config_location('excluded_directories.cfg')
+        self.log(f"Path has been added to excluded directories config - {path}")
+        try:
+            with open(cfg, "a") as file:
+                file.write(f"-{path}\n")
+        except:
+            self.log("Error saving excluded directories file")
+
+
+    def load_excluded_directories_config(self):
+        self.log("Loading in excluded directories...")
+        cfg = self.config_location('excluded_directories.cfg')
+        
+        try:
+            with open(cfg, "r") as file:
+                for line in file:
+                    if line.startswith("-"):
+                        path = line.strip().strip("-")
+                        if not os.path.exists(path):
+                            self.log(f"Path {path} does not exists, please remove from excluded config file")
+                            continue 
+                       
+                        # load new paths in
+                        if path not in self.EXCLUDE:
+                            self.EXCLUDE.append(path)
+
+        except:
+            self.log("No excluded directories config found")
+            self.make_excluded_directories_config()
             
 
     def save_checkbox_config(self, checkbox_1_value, checkbox_2_value, checkbox_3_value, checkbox_4_value, checkbox_5_value):

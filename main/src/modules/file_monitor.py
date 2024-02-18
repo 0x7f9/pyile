@@ -13,10 +13,11 @@ from . import *
 from modules.ui.notifier import trigger_notfication
 
 class monitor:
-    def __init__(self, path=None, check_current_files=None, notification_enabled=None, log=None,):
+    def __init__(self, path=None, excluded_paths=None, check_current_files=None, notification_enabled=None, log=None,):
         self.check_current_files = check_current_files
         self.notification_enabled = notification_enabled
         self.path = path
+        self.excluded = excluded_paths
         self.handle = None
         self.contents = None
         self.old_name = None
@@ -138,14 +139,15 @@ class monitor:
                 event = self.handle   
                 self.queue_notification(path_filename, event)
 
-            self.log(f"! User: {username} Modified: {filename}")
+            self.log(f"! User: {username} Modified: {path_filename}")
             self.check_file(path_filename, filename)
 
         elif self.handle == FILE_RENAMED_FROM:
             self.old_name = filename
 
         elif self.handle == FILE_RENAMED_TO:
-            self.log(f"! User: {username} renamed: [{self.old_name}] to: [{filename}]")
+            self.log(f"! User: {username} renamed: [{self.old_name}] to: [{filename}]\
+                     \nPath: {path_filename}")
 
         else:
             self.log(f"? Unknown action: {path_filename}")
@@ -266,6 +268,18 @@ class monitor:
         return True
 
 
+    def is_excluded(self, path_filename):
+        # normalise path separators //
+        path_filename = os.path.normpath(path_filename)
+        
+        for exclude_path in self.excluded:
+            exclude_path = os.path.normpath(exclude_path)
+            if exclude_path in path_filename:
+                return True
+        
+        return False
+    
+
     def main(self):
         if self.check_current_files is True:
             self.log("Checking for file duplicates...")
@@ -280,6 +294,7 @@ class monitor:
         # main logger
         self.log("Started file logging...")
         self.log(f"Started logging {self.path}\n")
+        
         while 1:
             self.handle = self.get_handle()
             
@@ -288,12 +303,16 @@ class monitor:
                 for self.handle, filename in self.get_changes():
                     if not self.is_running:
                         break
-
+                    
                     path_filename = os.path.join(self.path, filename)
-                    filename = os.path.basename(path_filename)
+                    
+                    # checks if path_filename is not in a excluded directory
+                    if self.is_excluded(path_filename):
+                        continue
+
                     self.last_file = filename
                     self.file_count += 1
-
+                    filename = os.path.basename(path_filename)
                     username = self.get_username(path_filename)
                     self.monitor_handle(filename, path_filename, username)
 

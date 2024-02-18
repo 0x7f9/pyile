@@ -49,7 +49,7 @@ class interface(customtkinter.CTk):
         # sidebar frame
         self.sidebar_frame = customtkinter.CTkFrame(self, width=140, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(7, weight=1)
+        self.sidebar_frame.grid_rowconfigure(8, weight=1)
 
         # tabview 
         self.tabview = customtkinter.CTkTabview(self, width=250)
@@ -67,6 +67,7 @@ class interface(customtkinter.CTk):
         # pass through log functuion so we can call it by self.log without having to import log function into each file
         self.get_config = user_config(log=lambda msg: log(self.console, msg))
         self.PATHS = self.get_config.return_paths()
+        self.EXCLUDE = self.get_config.return_excluded_paths()
 
         # main heading
         self.logo_label = customtkinter.CTkLabel(self.sidebar_frame, text="main", font=("Arial", -14), text_color=("grey"))
@@ -76,21 +77,24 @@ class interface(customtkinter.CTk):
         self.sidebar_button_1 = customtkinter.CTkButton(self.sidebar_frame,command=self.toggle_monitoring, width=130, height=30, font=("Arial", -14), text="Start logging")
         self.sidebar_button_1.grid(row=1, column=0, padx=10, pady=5)
 
-        self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, command=self.get_directory, width=130, height=30,  font=("Arial", -14), text="Add directory")
+        self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, command=self.get_save_directory, width=130, height=30,  font=("Arial", -14), text="Add directory")
         self.sidebar_button_2.grid(row=2, column=0, padx=10, pady=5)
 
-        self.sidebar_button_3 = customtkinter.CTkButton(self.sidebar_frame, command=self.back_up, width=130, height=30, font=("Arial", -14), text="Back up")
+        self.sidebar_button_3 = customtkinter.CTkButton(self.sidebar_frame, command=self.get_exclude_directory, width=130, height=30,  font=("Arial", -14), text="Exclude directory")
         self.sidebar_button_3.grid(row=3, column=0, padx=10, pady=5)
+
+        self.sidebar_button_4 = customtkinter.CTkButton(self.sidebar_frame, command=self.back_up, width=130, height=30, font=("Arial", -14), text="Back up")
+        self.sidebar_button_4.grid(row=4, column=0, padx=10, pady=5)
 
         # misc heading
         self.logo_label = customtkinter.CTkLabel(self.sidebar_frame, text="misc", font=("Arial", -14), text_color=("grey"))
-        self.logo_label.grid(row=4, column=0, padx=5, pady=0, sticky="w")
+        self.logo_label.grid(row=5, column=0, padx=5, pady=0, sticky="w")
 
         self.sidebar_button_4 = customtkinter.CTkButton(self.sidebar_frame, command=lambda: clear_console(self.console),width=130, height=30, font=("Arial", -14), text="Clear log")
-        self.sidebar_button_4.grid(row=5, column=0, padx=10, pady=5)
+        self.sidebar_button_4.grid(row=6, column=0, padx=10, pady=5)
   
-        self.sidebar_button_5 = customtkinter.CTkButton(self.sidebar_frame, command=self.save_location, width=130, height=30,font=("Arial", -14), text="Backup location")
-        self.sidebar_button_5.grid(row=6, column=0, padx=10, pady=5)
+        self.sidebar_button_5 = customtkinter.CTkButton(self.sidebar_frame, command=self.backup_location, width=130, height=30,font=("Arial", -14), text="Backup location")
+        self.sidebar_button_5.grid(row=7, column=0, padx=10, pady=5)
 
         # checkbox and switch frame in second tabview
         self.checkbox_slider_frame = customtkinter.CTkFrame(self.tabview.tab("config"))
@@ -129,7 +133,7 @@ class interface(customtkinter.CTk):
         self.get_checkbox_states()
 
 
-    def save_location(self):
+    def backup_location(self):
         self.save_directory = self.prompt()
 
 
@@ -152,6 +156,7 @@ class interface(customtkinter.CTk):
             self.checkbox_1_value = True
             self.checkbox_1.select()
             self.get_config.load_directories_config()
+            self.get_config.load_excluded_directories_config()
 
         # # not coded
         # if self.checkbox_2_value:
@@ -183,13 +188,15 @@ class interface(customtkinter.CTk):
 
     def update_values(self, last_file, count, match):
         # send updated values
-        self.heading_label.configure(text=f"{match} Files are the same")
-        self.heading_label_2.configure(text=f"{count} Files checked today")
-        
-        if last_file == None:
-            return
+        if match:
+            self.heading_label.configure(text=f"{match} Files are the same")
 
-        self.heading_label_3.configure(text=f"Last file checked - {last_file}")
+        if count:
+            self.heading_label_2.configure(text=f"{count} Files checked today")
+        
+        if last_file:
+            self.heading_label_3.configure(text=f"Last file checked - {last_file}")
+
         
 
     def checkbox_checked(self, checkbox):
@@ -197,11 +204,15 @@ class interface(customtkinter.CTk):
         if checkbox == 1:
             self.checkbox_1_value = not self.checkbox_1_value
             if self.checkbox_1_value:
-                self.get_config.make_directories_config()
+                self.get_config.make_save_directories_config()
+                self.get_config.make_excluded_directories_config()
                 
                 for path in self.PATHS:
                      self.get_config.save_directories_config(path)
-        
+
+                for path in self.EXCLUDE:
+                     self.get_config.save_excluded_directories_config(path)
+
         # # not coded yet
         # elif checkbox == 2:
         #     self.checkbox_2_value = not self.checkbox_2_value
@@ -323,7 +334,7 @@ class interface(customtkinter.CTk):
         self.sidebar_button_1.configure(text="Stop logging")
         for path in self.PATHS:
             # pass through log functuion so we can call it by self.log without having to import log function into each file
-            file_monitor = monitor(path, check_current_files=self.check_current_files, notification_enabled=self.notification_enabled, log=lambda msg: log(self.console, msg))
+            file_monitor = monitor(path, excluded_paths=self.EXCLUDE, check_current_files=self.check_current_files, notification_enabled=self.notification_enabled, log=lambda msg: log(self.console, msg))
             
             # start a thread for each path to keep track of the updated values
             update_thread = threading.Thread(target=self.updater, args=(file_monitor,), daemon=True)
@@ -357,12 +368,18 @@ class interface(customtkinter.CTk):
             log(self.console,"no directory selected")
             
 
-    def get_directory(self):
-        input_file = set()
-        if not input_file:
-            directory = self.prompt()
-            self.PATHS.append(directory)
+    def get_save_directory(self):
+        directory = self.prompt()
+        self.PATHS.append(directory)
 
-            if self.checkbox_1_value:
-                self.get_config.save_directories_config(directory)
+        if self.checkbox_1_value:
+            self.get_config.save_directories_config(directory)
+
+
+    def get_exclude_directory(self):
+        directory = self.prompt()
+        self.EXCLUDE.append(directory)
+
+        if self.checkbox_1_value:
+            self.get_config.save_excluded_directories_config(directory)
 
