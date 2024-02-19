@@ -9,7 +9,9 @@ def log(log_area, message):
     log_area.see(tk.END)
     save_name = 'log.txt'
 
-    path = os.path.join("main", "logging") 
+    # gets relative pathing and goes back three levels to find logging folder
+    script_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(script_dir, "logging")
     if not os.path.exists(path):
         os.makedirs(path)
     save_path = os.path.join(path, save_name) 

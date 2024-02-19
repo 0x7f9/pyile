@@ -1,6 +1,7 @@
 import time
 import threading
 import pystray
+import os
 import customtkinter
 from tkinter import scrolledtext, filedialog
 from pystray import MenuItem as item
@@ -40,7 +41,11 @@ class interface(customtkinter.CTk):
         # create window
         self.title("Pyile")
         self.geometry("940x440")
-        self.iconbitmap("main\\src\\modules\\ui\\images\\icon.ico")
+
+        # gets relative pathing
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        icon_path = os.path.join(script_dir, "images", "icon.ico")
+        self.iconbitmap(icon_path)
 
         # main grid layout
         self.grid_columnconfigure(1, weight=1)
@@ -281,8 +286,12 @@ class interface(customtkinter.CTk):
         self.tray_icon_thread = True
         tooltip = "Pyile - File Monitor"
 
+        # gets relative pathing
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        tray_icon_path = os.path.join(script_dir, "images", "tray_icon.png")
+        image = Image.open(tray_icon_path)
+
         # create system tray icon with default left click action
-        image = Image.open("main\\src\\modules\\ui\\images\\tray_icon.png")
         menu = (
             item('exit', self.icon_clicked), 
             item('show', self.icon_clicked, default=True, visible=False)

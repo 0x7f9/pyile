@@ -1,12 +1,13 @@
 import time
 import os
-import win32file
-import win32security
 import threading
 import hashlib
 import concurrent.futures
 import multiprocessing
+import win32file
 import win32api
+import win32security
+from win32security import OWNER_SECURITY_INFORMATION, DACL_SECURITY_INFORMATION
 from queue import Queue
 
 from . import *
@@ -89,15 +90,17 @@ class monitor:
 
     def get_username(self, path_filename):
         try:
-            # returns the username associated with the file change or file owner
-            file_security = win32security.GetFileSecurity(path_filename, win32security.OWNER_SECURITY_INFORMATION)
+            # get user that made last change to file (needs admin)
+            file_security = win32security.GetFileSecurity(
+                path_filename, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION
+            )
             sid = file_security.GetSecurityDescriptorOwner()
             account, _, _ = win32security.LookupAccountSid(None, sid)
             return account
         except:
-            # returns the user account signed in to the system
+            # fallback to file owner if not admin
             return win32api.GetUserName()
-
+        
 
     def process_notifications(self):
         while 1:
@@ -263,7 +266,6 @@ class monitor:
 
 
     def notfication(self, path_filename):
-        print("CLICKED")
         os.startfile(path_filename)
         return True
 

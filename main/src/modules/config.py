@@ -39,7 +39,10 @@ class user_config:
 
 
     def config_location(self, cfg_name):
-        path = os.path.join("main", "configs") 
+        # gets relative pathing and goes back three levels to find configs folder
+        script_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        path = os.path.join(script_dir, "configs")
+
         if not os.path.exists(path):
             os.makedirs(path)
         return os.path.join(path, cfg_name)

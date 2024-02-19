@@ -69,7 +69,9 @@ class backup_monitor:
             save_directory = os.path.join(backup_directory, name)
 
         else:
-            path = os.path.join("main", "backup") 
+            # gets relative pathing and goes back three levels to find backup folder
+            script_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            path = os.path.join(script_dir, "backup")
             if not os.path.exists(path):
                 os.makedirs(path)
             save_directory = os.path.join(path, name) 
