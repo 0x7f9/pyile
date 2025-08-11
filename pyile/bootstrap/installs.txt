@@ -1,0 +1,7 @@
+setuptools
+customtkinter
+darkdetect
+pywin32
+pystray
+pillow
+xxhash
