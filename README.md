@@ -6,13 +6,13 @@ This repository provides a real time file system monitoring tool for Windows, wr
 
 ##
 
-<img width="962" height="582" alt="front" src="https://github.com/user-attachments/assets/77d71f43-2ae6-4fd0-9f2a-bfc418890c19" />
+<img width="962" height="582" alt="front" src="pyile/assets/readme_images/front.PNG" />
 
-<img width="962" height="582" alt="back" src="https://github.com/user-attachments/assets/ecc70761-e9ce-4eea-9dd8-f16d03f9f481" />
+<img width="962" height="582" alt="back" src="pyile/assets/readme_images/back.PNG" />
 
-<img width="962" height="582" alt="front_light" src="https://github.com/user-attachments/assets/cd6e5361-a159-4cb1-8d3f-796fb8248f13" />
+<img width="962" height="582" alt="front_light" src="pyile/assets/readme_images/front_light.PNG" />
 
-<img width="962" height="582" alt="back_light" src="https://github.com/user-attachments/assets/9020e835-8698-46ff-9bb8-faacfa19a3f1" />
+<img width="962" height="582" alt="back_light" src="pyile/assets/readme_images/back_light.PNG" />
 
 ## Monitoring at the Core
 
