@@ -19,6 +19,11 @@ class ExecutorPool(LazyInit):
             thread_name_prefix=prefix
         )
 
+    def restart(self) -> None:
+        with self._lock:
+            if self._shutdown:
+                self._shutdown = False
+
     def get_hash_executor(self) -> Optional[ThreadPoolExecutor]:
         if self._shutdown:
             return None

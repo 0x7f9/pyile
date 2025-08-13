@@ -6,7 +6,7 @@ from pyile.lib.runtime.internal.constants import (
 )
 from pyile.lib.ui.notifier import trigger_notfication
 from pyile.lib.utils.common import (
-    join_path, is_directory, get_norm_path, open_file_ro,
+    join_path, is_directory, get_norm_path, open_file_ro_retry,
     read_text, close_fd, is_file, list_directory, file_exists
 )
 from pyile.lib.utils.hash_manager import HashManager
@@ -183,7 +183,7 @@ class Monitor(BaseMonitor):
                 self.log_console(f"User: {username} Created: {path_filename}")
                 if self.notification_enabled:
                     self._trigger_notification(path_filename, action)
-                self._check_file_async(norm_path, filename)
+                self._check_file_async(norm_path)
                 return True
                 
             elif action == FILE_ACTION_REMOVED:
@@ -196,7 +196,7 @@ class Monitor(BaseMonitor):
                 self.log_console(f"User: {username} Modified: {path_filename}")
                 if self.notification_enabled:
                     self._trigger_notification(path_filename, action)
-                self._check_file_async(norm_path, filename)
+                self._check_file_async(norm_path)
                 return True
                 
             elif action == FILE_RENAMED_FROM:
@@ -214,7 +214,7 @@ class Monitor(BaseMonitor):
             log_error(f"Error processing file event ({path_filename}): {e}")
             return False
 
-    def _check_file_async(self, path_filename: str, filename: str) -> None:
+    def _check_file_async(self, path_filename: str) -> None:
         if path_filename is None or is_directory(path_filename):
             return
 
@@ -234,26 +234,13 @@ class Monitor(BaseMonitor):
                     log_debug(f"Skipping hash (mtime unchanged): {path_filename}")
                     return
 
-            try:
-                size = os.path.getsize(path_filename)
-            except Exception:
-                size = None
-
-            # TODO: add something for larger files.
-            # maybe read in X amount of data from the start of the file, 
-            # then hash these bytes and store them in the cache for future 
-            # should allow for tracking larger files without wasting cpu cycles
-            if size is not None and size > self.max_hash_file_bytes:
-                self.log_console(f"[SKIP] File too large for hashing ({size} bytes): {path_filename}")
-                return
-
-            fut = self._hasher.submit(self._process_file_hash, path_filename, filename) # type: ignore
-            self._track_future(fut, path_filename)
+            fut = self._hasher.submit(self._process_file_hash, path_filename) # type: ignore
+            self._track_future(fut)
 
         except Exception as e:
             log_error(f"Failed to submit hash job for {path_filename}: {e}")
 
-    def _track_future(self, future: concurrent.futures.Future, path_filename: str) -> None:
+    def _track_future(self, future: concurrent.futures.Future) -> None:
         with self._futures_lock:
             self._pending_futures.add(future)
 
@@ -269,41 +256,79 @@ class Monitor(BaseMonitor):
         except Exception:
             pass
 
-    def _process_file_hash(self, norm_path: str, filename: str) -> bool:
+    def _process_file_hash(self, norm_path: str) -> bool:
         if not self.is_running:
             return False
 
-        fd = None
+        try:
+            size = os.path.getsize(norm_path)
+        except Exception as e:
+            log_error(f"Failed to get size for hashing {norm_path} {e}")
+            return False
+
+        fd = open_file_ro_retry(norm_path)
+        if fd is None:
+            log_error(
+                f"Failed to open file for hashing {norm_path}: \
+                Most likely another Windows file handle is open to this file"
+            )
+            return False
+        
         contents = bytearray()
         try:
-            fd = open_file_ro(norm_path)
-            if fd is None:
-                log_error(f"Failed to open file for hashing: {norm_path}")
+            if size <= self.max_hash_file_bytes:
+                for chunk in read_text(fd, CHUNK_SIZE):
+                    if not self.is_running:
+                        return False
+                    contents.extend(chunk)
+            else:
+                chunk_size = DEFAULT_MAX_FILE_BYTES
+                positions = [0]
+
+                if size > 2 * chunk_size:
+                    positions.append(size // 2)
+                if size > chunk_size:
+                    positions.append(size - chunk_size)
+
+                for pos in positions:
+                    try:
+                        os.lseek(fd, pos, os.SEEK_SET)
+                    except Exception as e:
+                        log_error(f"Seek failed at position {pos} in {norm_path} {e}")
+                        continue
+
+                    bytes = min(chunk_size, size - pos)
+                    for chunk in read_text(fd, CHUNK_SIZE):
+                        if not self.is_running:
+                            return False
+                        if bytes <= 0:
+                            break
+                        if len(chunk) > bytes:
+                            contents.extend(chunk[:bytes])
+                            break
+                        else:
+                            contents.extend(chunk)
+                            bytes -= len(chunk)
+
+            if not contents:
+                log_error(f"No data read from file for hashing for file {norm_path}")
                 return False
-            
-            for chunk in read_text(fd, CHUNK_SIZE):
-                if not self.is_running:
-                    return False
-                contents.extend(chunk)
-            
-            file_key = HashManager.hash_path_and_contents(norm_path, contents)
-            
+
+            file_key = HashManager.hash_contents(contents)
+
             try:
                 stat_mtime = os.path.getmtime(norm_path)
                 self._mtime_cache[norm_path] = stat_mtime
             except Exception:
                 pass
-        
-            if is_file_cached(file_key):
-                # self.log_console(f"[CACHE] found cache {filename} (skipping hash)")
-                return True
-            
-            # self.log_console(f"[CACHE] {filename} not in cache (computing hash)")
-            
-            update_cache_entry(file_key)
-            self._check_hash_fast(norm_path, filename, file_key)
+
+            if not is_file_cached(file_key):
+                # self.log_console(f"[CACHE] {filename} not in cache (updating cache)")
+                update_cache_entry(file_key)
+
+            self._check_hash_fast(norm_path, file_key)
             return True
-            
+
         except Exception as e:
             log_error(f"Error during hash checking: {norm_path} - {e}")
             return False
@@ -319,7 +344,7 @@ class Monitor(BaseMonitor):
             except Exception:
                 pass
 
-    def _check_hash_fast(self, path_filename: str, filename: str, file_key: int) -> None:
+    def _check_hash_fast(self, path_filename: str, file_key: int) -> None:
         try:
             existing_file = self._stats.file_hashes.get_or_set(str(file_key), path_filename)
             
@@ -408,7 +433,7 @@ class Monitor(BaseMonitor):
             valid_tasks.append((norm_path, file))
 
         for norm_path, file in valid_tasks:
-            future = self._hasher.submit(self._process_file_hash, norm_path, file) # type: ignore
+            future = self._hasher.submit(self._process_file_hash, norm_path) # type: ignore
             futures.append(future)
             processed_count += 1
 

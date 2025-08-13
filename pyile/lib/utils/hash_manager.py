@@ -9,11 +9,17 @@ class HashManager:
             data = data.encode("utf-8")
         return xxhash.xxh3_64(data).intdigest()
 
+    # @staticmethod
+    # def hash_path_and_contents(path: str, contents: bytes) -> int:
+    #     h = xxhash.xxh3_64()
+    #     h.update(path.encode("utf-8"))
+    #     h.update(b"\0")
+    #     h.update(contents)
+    #     return h.intdigest()
+
     @staticmethod
-    def hash_path_and_contents(path: str, contents: bytes) -> int:
+    def hash_contents(contents: bytes) -> int:
         h = xxhash.xxh3_64()
-        h.update(path.encode("utf-8"))
-        h.update(b"\0")
         h.update(contents)
         return h.intdigest()
 

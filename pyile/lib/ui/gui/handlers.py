@@ -248,6 +248,9 @@ class GUIHandlers:
         self.gui.PATHS = self.gui.get_config.return_paths()
         self.gui.EXCLUDE = self.gui.get_config.return_excluded_paths()
 
+        from pyile.lib.runtime.internal.executor_pool import ExecutorPool
+        ExecutorPool.get().restart()
+
         nm = NotificationManager.get()
         nm.set_sound_enabled(self.gui.notification_sound_enabled)
         nm.start()

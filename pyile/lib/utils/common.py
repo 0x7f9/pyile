@@ -175,6 +175,21 @@ def open_file_ro(path: str) -> Optional[int]:
     except OSError:
         return None
 
+def open_file_ro_retry(path: str, retries=5, delay=1) -> Optional[int]:
+    # handles file locks on Windows by retrying. Callers should handle 
+    # none return to detect permanent failures. this usually happens when a user 
+    # copies a file and the handle remains open while copying contents.
+    
+    # Note: this function can still return None if the copied file is large and locked for an extended time
+    # there is currently nothing in place to prevent this.
+
+    for _ in range(retries):
+        fd = open_file_ro(path)
+        if fd is not None:
+            return fd
+        time.sleep(delay)
+    return None
+
 def open_file_rw(path: str, mode: int = FILE_MODE_DEFAULT, extra_flags: int = 0) -> Optional[int]:
     try:
         flags = os.O_CREAT | os.O_RDWR | extra_flags
