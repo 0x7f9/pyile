@@ -31,6 +31,16 @@ This repository provides a real time file system monitoring tool for Windows, wr
 - Hashes are stored in `pyile.cache.slab` after each session 
 - Duplicate detection is based on content, not filename or metadata  
 
+## Duplication Detection
+
+- Optionally scan existing files and compute their content hashes
+- All file events are hashed and stored across sessions
+- Hashes are persisted in `pyile.cache.slab` after each session
+- Duplicate detection is based on file content, not filename or metadata
+- File modification times `mtime` are used as a fast pre-check to skip hashing unchanged files
+- For files smaller than the configured threshold `max_hash_file_bytes`, the entire file is read and hashed
+- For larger files, multiple chunks are sampled from the start, middle, and end of the file. These chunks are concatenated and hashed together, improving detection accuracy for changes anywhere within large files
+
 ## Smarter Caching
 
 - Combines a memory mapped circular buffer with a fast in memory index
