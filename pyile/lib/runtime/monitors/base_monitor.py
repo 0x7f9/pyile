@@ -1,6 +1,5 @@
 from pyile.lib.utils.common import open_file_rw, write_text, close_fd, join_path, get_username
-from pyile.lib.utils.os_version import is_windows_11
-from pyile.lib.utils.logging import log_error, log_info, log_debug
+from pyile.lib.utils.logging import log_error, log_debug
 from pyile.lib.runtime.internal.constants import (
     FILE_LIST_DIRECTORY, FILE_SHARE_READ, FILE_SHARE_DELETE, FILE_SHARE_WRITE, 
     OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT, 
@@ -19,7 +18,7 @@ import win32file # type: ignore
 import threading
 import ctypes
 from ctypes import wintypes
-from typing import Optional, Any
+from typing import Optional, List, Tuple, Any
 
 def _cancel_pending_read(handle: Any) -> bool:
     if not handle:
@@ -77,7 +76,7 @@ class BaseMonitor:
         with self._handle_lock:
             return self._handle
         
-    def get_handle(self):
+    def get_handle(self) -> Optional[Any]:
         try:
             desired_access = FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES
             share_mode = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE
@@ -113,7 +112,7 @@ class BaseMonitor:
             print(f"Failed to create handle: {e}")
             return None
 
-    def get_changes(self):
+    def get_changes(self) -> List[Tuple[int, str]]:
         handle = self._get_handle_safe()
         if not handle:
             return []
@@ -145,7 +144,7 @@ class BaseMonitor:
             self._error_count += 1
             return []
             
-    def _parse_results(self):
+    def _parse_results(self) -> List[Tuple[int, str]]:
         results = []
         offset = 0
         buf = self._buf.raw
