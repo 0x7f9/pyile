@@ -106,6 +106,10 @@ python run.py
 
    > Note: I am looking into ETW (Event Tracing for Windows) to fix this issue.
 
+- Rapid Start/Stop:
+
+   When rapidly starting and stopping the monitoring through the GUI, there may be unexpected crashes of the GUI. The exact cause is not yet known. It is unlikely to be related to file handles, as each thread has its own handle to the monitored directory. A `_get_handle_safe()` method with a lock has been added to ensure the handle is not accessed while shutdown is in progress for that thread.
+
 ## Dependencies
 
 All core dependencies are listed in `pyile/bootstrap/installs.txt`:
