@@ -7,16 +7,15 @@ from typing import Callable, Optional
 _thread_state = ThreadSafeDict()
 
 def is_thread_healthy(thread_key: str) -> bool:
-    ref = _thread_state.get(thread_key)
-    if ref is None:
+    thread = _thread_state.get(thread_key)
+    if thread is None:
         return False
     
-    thread = ref()
-    if thread is None:
+    if not thread.is_alive():
         _thread_state.pop(thread_key, None) 
         return False
     
-    return thread.is_alive()
+    return True
 
 def start_thread_if_needed(
         thread_key: str, 

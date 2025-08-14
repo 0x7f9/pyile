@@ -6,7 +6,7 @@ from typing import Any, Optional, Iterator, List, Callable
 from collections import deque, OrderedDict
 
 class SafeThread(threading.Thread):
-    __slots__ = ('_fn', '_args', '_kwargs')
+    __slots__ = ("_fn", "_args", "_kwargs")
 
     def __init__(
         self, 
@@ -21,10 +21,21 @@ class SafeThread(threading.Thread):
         self._args = args
         self._kwargs = kwargs or {}
 
+    def _delete(self):
+        try:
+            super()._delete()  # type: ignore[attr-defined]
+        except KeyError:
+            pass
+
     def run(self) -> None:
         try:
             if self._fn:
                 self._fn(*self._args, **self._kwargs)
+        except KeyError as ke:
+            if "_active" in str(ke):
+                pass 
+            else:
+                raise
         except Exception as e:
             fn_name = getattr(self._fn, "__name__", "unknown_function") if self._fn else "unknown_function"
             from pyile.lib.utils.logging import log_error
@@ -38,7 +49,7 @@ class SafeThread(threading.Thread):
 
 
 class AtomicCounter:
-    __slots__ = ('_value', '_lock')
+    __slots__ = ("_value", "_lock")
     
     def __init__(self, initial_value: int = 0):
         self._value = initial_value
@@ -83,7 +94,7 @@ class AtomicFlag(AtomicCounter):
 
 
 class ThreadSafeDict:
-    __slots__ = ('_dict', '_lock')
+    __slots__ = ("_dict", "_lock")
     
     def __init__(self):
         self._dict = {}
@@ -154,11 +165,11 @@ class ThreadSafeDict:
 
 class TTLCache:
     __slots__ = (
-        '_cache', '_timestamps', '_maxsize', '_ttl', 
-        '_lock', '_ttls', '_last_cleanup', '_cleanup_interval'
+        "_cache", "_timestamps", "_maxsize", "_ttl", 
+        "_lock", "_ttls", "_last_cleanup", "_cleanup_interval"
     )
     
-    def __init__(self, maxsize: int = MAX_CACHE_SIZE, ttl: float = CACHE_TTL):
+    def __init__(self, maxsize: int = MAX_CACHE_SIZE, ttl: Optional[float] = None):
         self._cache = {}
         self._timestamps = OrderedDict()
         self._maxsize = maxsize
@@ -218,7 +229,7 @@ class TTLCache:
 
 
 class RingBuffer:
-    __slots__ = ('max_size', '_buffer', '_sum', '_lock')
+    __slots__ = ("max_size", "_buffer", "_sum", "_lock")
     
     def __init__(self, max_size: int):
         self.max_size = max_size
@@ -254,7 +265,7 @@ class RingBuffer:
     
 
 class ThreadSafeList:
-    __slots__ = ('_lock', '_list')
+    __slots__ = ("_lock", "_list")
     
     def __init__(self, initial=None, max_size: Optional[int] = None):
         self._lock = threading.RLock()
@@ -294,7 +305,7 @@ class ThreadSafeList:
 
 
 class ThreadSafeSet:
-    __slots__ = ('_set', '_lock')
+    __slots__ = ("_set", "_lock")
     
     def __init__(self, iterable=None):
         self._set = set(iterable) if iterable else set()

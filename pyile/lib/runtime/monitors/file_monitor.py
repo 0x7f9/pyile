@@ -20,12 +20,9 @@ import threading
 import time
 import os
 import concurrent.futures
-import win32file # type: ignore
-import win32api # type: ignore 
-import win32security # type: ignore
 from pathlib import Path
 from concurrent.futures import as_completed
-from typing import Optional, List, Tuple, Callable
+from typing import Optional, Tuple, Callable
 
 DEFAULT_MAX_FILE_BYTES = 50 * 1024 * 1024
 
@@ -33,7 +30,7 @@ class Monitor(BaseMonitor):
     def __init__(
             self, 
             path: Optional[str] = None, 
-            excluded_paths: Optional[List[str]] = None, 
+            excluded_cache: Optional[list[tuple[str, ...]]] = None, 
             check_current_files: Optional[bool] = None, 
             notification_enabled: Optional[bool] = None, 
             exclude_system_extensions: Optional[bool] = None,
@@ -43,12 +40,12 @@ class Monitor(BaseMonitor):
         ) -> None:
         
         __slots__ = ( 
-            "excluded", "check_current_files", "notification_enabled", 
+            "excluded_cache", "check_current_files", "notification_enabled", 
             "exclude_system_extensions", "exclude_temp_extensions", 
             "log_console", "max_hash_file_bytes", "_system_extension_filter", 
             "_temp_extension_filter", "_debounce_timer", "_mtime_cache", 
             "_spider_files", "_stats", "_hasher", "_futures_lock", 
-            "_pending_futures", "_excluded_cache",
+            "_pending_futures"
         )
                 
         if path is None:
@@ -58,7 +55,7 @@ class Monitor(BaseMonitor):
         
         super().__init__(path)
         
-        self.excluded = excluded_paths
+        self.excluded_cache = excluded_cache
         self.check_current_files = check_current_files
         self.notification_enabled = notification_enabled
         self.exclude_system_extensions = exclude_system_extensions
@@ -69,7 +66,7 @@ class Monitor(BaseMonitor):
         self._system_extension_filter = SYSTEM_EXTENSIONS
         self._temp_extension_filter = TEMP_EXTENSIONS
         self._debounce_timer = TTLCache(maxsize=8192, ttl=DEBOUNCE_WINDOW)
-        self._mtime_cache = TTLCache(maxsize=16384, ttl=60.0)
+        self._mtime_cache = TTLCache(maxsize=16384, ttl=None)
 
         self._spider_files = set()
         self._stats = GlobalStats.get()
@@ -77,10 +74,6 @@ class Monitor(BaseMonitor):
         
         self._futures_lock = threading.Lock()
         self._pending_futures = set()
-
-        self._excluded_cache = [
-            tuple(Path(get_norm_path(p).lower()).parts) for p in (self.excluded or [])
-        ]
 
     def stop(self) -> None:
         log_debug(f"FileMonitor {self.path} stop() called")
@@ -532,12 +525,12 @@ class Monitor(BaseMonitor):
             return False
 
     def is_excluded(self, path_filename: str) -> bool:
-        if not self.excluded:
+        if not self.excluded_cache:
             return False
 
         norm_parts = Path(get_norm_path(path_filename).lower()).parts
 
-        for excluded_parts in self._excluded_cache:
+        for excluded_parts in self.excluded_cache:
             if len(excluded_parts) > len(norm_parts):
                 continue
 

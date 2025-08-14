@@ -18,12 +18,13 @@ class OSVERSIONINFOEXW(ctypes.Structure):
         ("wReserved",           wintypes.BYTE),
     ]
 
-# class SECURITY_ATTRIBUTES(ctypes.Structure):
-#     _fields_ = [
-#         ("nLength",               wintypes.DWORD),
-#         ("lpSecurityDescriptor",  wintypes.LPVOID),
-#         ("bInheritHandle",        wintypes.BOOL)
-#     ]
+
+class SECURITY_ATTRIBUTES(ctypes.Structure):
+    _fields_ = [
+        ("nLength",               wintypes.DWORD),
+        ("lpSecurityDescriptor",  wintypes.LPVOID),
+        ("bInheritHandle",        wintypes.BOOL)
+    ]
 
 
 class Rec(ctypes.Structure):

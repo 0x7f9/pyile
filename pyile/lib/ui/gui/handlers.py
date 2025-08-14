@@ -1,6 +1,6 @@
 from pyile.lib.utils.common import (
     get_project_root, ensure_dir_exists, file_exists, 
-    is_directory, is_gui_env, join_path
+    is_directory, is_gui_env, join_path, get_norm_path
 )
 from pyile.lib.utils.logging import log_error, log_debug, log_warning, stop_log_thread, log_info
 from pyile.lib.utils.config import flush_config_q
@@ -19,6 +19,7 @@ import time
 from typing import Optional, Any
 from tkinter import filedialog
 import customtkinter
+from pathlib import Path
 
 class GUIHandlers:
     __slots__ = ("gui")
@@ -247,6 +248,10 @@ class GUIHandlers:
     def _start_monitoring(self) -> None:
         self.gui.PATHS = self.gui.get_config.return_paths()
         self.gui.EXCLUDE = self.gui.get_config.return_excluded_paths()
+        
+        excluded_cache = [
+            tuple(Path(get_norm_path(p).lower()).parts) for p in (self.gui.EXCLUDE or [])
+        ]
 
         from pyile.lib.runtime.internal.executor_pool import ExecutorPool
         ExecutorPool.get().restart()
@@ -270,7 +275,7 @@ class GUIHandlers:
             
             file_monitor = Monitor(
                 path, 
-                excluded_paths=self.gui.EXCLUDE, 
+                excluded_cache=excluded_cache, 
                 check_current_files=self.gui.check_current_files, 
                 notification_enabled=self.gui.notification_enabled, 
                 exclude_system_extensions=self.gui.exclude_system_extensions,
