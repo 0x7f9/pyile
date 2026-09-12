@@ -77,7 +77,3 @@ All core dependencies are listed in `pyile/bootstrap/installs.txt`:
 - `pillow` – Image processing used for tray icon  
 - `xxhash` – Hashing for content based keys
   
-- **Windows 11 support** – Now fully supports windows 11 environments
-- **Security enhancements** – File type validation and secure file opening
-- **Thread safety** – Better state management of monitored paths
-
