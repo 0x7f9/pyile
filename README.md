@@ -54,15 +54,15 @@ python run.py
 
 ## Known Issues
 
-Notification Sound Timing:
+### Notification Sound Timing
 
 The notification sound currently plays when the legacy notification manager (system tray balloon list) processes the notification, which may not align precisely with the actual toast/banner card appearing visually on screen. To help a fixed 4 second delay is enforced after playing the sound before the next notification sound can trigger. This behavior comes from the legacy `Shell_NotifyIcon` balloon API.
 
-Username Context:
+### Username Context
 
 Currently the username of the detected file change is grabbed using the `path_filename` of the detected event using `GetSecurityDescriptorOwner()`. This is an issue as it's not actually displaying who deleted the file rather who owned the file. Also for deleted files its falling back to the current user as the file is not on disk. ETW will fix this issue.
 
-Rapid Start/Stop:
+### Rapid Start/Stop
 
 When rapidly starting and stopping the monitoring through the GUI, there may be unexpected crashes of the GUI.
 
